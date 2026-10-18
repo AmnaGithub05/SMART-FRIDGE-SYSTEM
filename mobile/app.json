@@ -8,6 +8,14 @@
     "splash": {
       "backgroundColor": "#edf3f1"
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#166b4d"
+        }
+      ]
+    ],
     "android": {
       "package": "com.amna.amsungfridge"
     },

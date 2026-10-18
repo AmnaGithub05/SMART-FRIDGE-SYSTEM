@@ -201,6 +201,33 @@ updates. A phone cannot reach a private Jetson address such as
 `192.168.1.100` unless it is on the same network or connected through a secure
 VPN/tunnel.
 
+### Phone notifications
+
+The mobile app requests notification permission and creates local phone alerts
+for inventory items marked `low` or `expiring`. It also registers the device's
+Expo push token with:
+
+```text
+POST /notifications/register
+{ "token": "<expo-push-token>", "platform": "expo" }
+```
+
+To deliver notifications while the app is closed, the Jetson/backend must
+store registered tokens and send messages through the Expo Push Service when
+inventory or freshness data changes. Example notification payload:
+
+```json
+{
+  "to": "<expo-push-token>",
+  "title": "Consume strawberries soon",
+  "body": "Freshness is declining · Upper shelf",
+  "sound": "default"
+}
+```
+
+Remote notifications require `useMockData: false`, a reachable HTTPS API, and
+an Android/iOS development or production build with notification permissions.
+
 ## License and data
 
 No license or third-party dataset is currently declared in this repository.

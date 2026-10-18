@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,7 +11,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchFridgeSnapshot, MOBILE_API_CONFIG } from './src/fridgeApi';
+import { fetchFridgeSnapshot, MOBILE_API_CONFIG, registerPushToken } from './src/fridgeApi';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const colors = {
   ink: '#182c2d',
@@ -53,12 +63,50 @@ export default function App() {
   const [snapshot, setSnapshot] = useState(null);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const notifiedKeys = useRef(new Set());
+
+  useEffect(() => {
+    let active = true;
+    const register = async () => {
+      if (!Device.isDevice) return;
+      const permissions = await Notifications.getPermissionsAsync();
+      let status = permissions.status;
+      if (status !== 'granted') {
+        status = (await Notifications.requestPermissionsAsync()).status;
+      }
+      if (status !== 'granted' || !active) return;
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      try {
+        await registerPushToken(token);
+      } catch (registrationError) {
+        if (active) setError(registrationError.message);
+      }
+    };
+    register();
+    return () => { active = false; };
+  }, []);
 
   const load = useCallback(async () => {
     try {
       const next = await fetchFridgeSnapshot();
       setSnapshot(next);
       setError('');
+      const alerts = [
+        ...next.inventory
+          .filter((item) => item.state === 'low')
+          .map((item) => ({ key: `low:${item.name}`, title: `Restock ${item.name}`, body: `${item.quantity} left · ${item.location}` })),
+        ...next.inventory
+          .filter((item) => item.state === 'expiring')
+          .map((item) => ({ key: `expiring:${item.name}`, title: `Consume ${item.name} soon`, body: `Freshness is declining · ${item.location}` })),
+      ];
+      for (const alert of alerts) {
+        if (notifiedKeys.current.has(alert.key)) continue;
+        notifiedKeys.current.add(alert.key);
+        await Notifications.scheduleNotificationAsync({
+          content: { title: alert.title, body: alert.body, sound: 'default' },
+          trigger: null,
+        });
+      }
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -126,7 +174,7 @@ export default function App() {
           ))}
         </Panel>
 
-        <Text style={styles.footer}>Updates every {MOBILE_API_CONFIG.refreshIntervalMs / 1000}s · Pull down to refresh</Text>
+        <Text style={styles.footer}>Updates every {MOBILE_API_CONFIG.refreshIntervalMs / 1000}s · Push alerts enabled</Text>
       </ScrollView>
     </SafeAreaView>
   );

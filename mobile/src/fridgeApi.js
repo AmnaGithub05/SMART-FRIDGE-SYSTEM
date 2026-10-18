@@ -29,6 +29,16 @@ async function getJson(path) {
   return response.json();
 }
 
+export async function registerPushToken(token) {
+  if (MOBILE_API_CONFIG.useMockData) return;
+  const response = await fetch(`${MOBILE_API_CONFIG.baseUrl}/notifications/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, platform: 'expo' }),
+  });
+  if (!response.ok) throw new Error(`Push token registration failed: ${response.status}`);
+}
+
 export async function fetchFridgeSnapshot() {
   if (MOBILE_API_CONFIG.useMockData) {
     await wait(250);

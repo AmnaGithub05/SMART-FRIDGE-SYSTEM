@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "AmSung Fridge",
+    "slug": "amsung-fridge",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#edf3f1"
+    },
+    "android": {
+      "package": "com.amna.amsungfridge"
+    },
+    "ios": {
+      "bundleIdentifier": "com.amna.amsungfridge"
+    }
+  }
+}

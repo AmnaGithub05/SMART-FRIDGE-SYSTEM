@@ -33,6 +33,7 @@ deployment on an NVIDIA Jetson Orin Nano, with ONNX export for edge inference.
 | `models/` | Training outputs, weights, and exported models |
 | `database/` | SQLite inventory database |
 | `frontend/` | React/Vite dashboard for freshness decisions, inventory, alerts, and history |
+| `mobile/` | Expo React Native app for Android and iPhone |
 
 Most directories are created by the script at runtime and are intentionally not
 required to be committed to source control.
@@ -166,6 +167,39 @@ For static hosting, deploy the generated `frontend/dist/` directory after
 running `npm run build`. For a service such as Render, use `frontend` as the
 root directory, `npm install && npm run build` as the build command, and
 `frontend/dist` as the publish directory when configuring a static site.
+
+## Mobile application
+
+The repository also includes a cross-platform Expo React Native app in `mobile/`.
+It uses the same Jetson API contract as the web dashboard and is designed for
+Android and iPhone. It refreshes automatically every eight seconds and supports
+pull-to-refresh.
+
+Install and run it with Expo:
+
+```bash
+cd mobile
+npm install
+npm start
+```
+
+Then open the project with Expo Go, an Android emulator, or an iOS simulator.
+The available scripts are:
+
+```bash
+npm run android
+npm run ios
+npm run web
+npm run export
+```
+
+Configure the mobile API in
+[`mobile/src/fridgeApi.js`](mobile/src/fridgeApi.js). Keep
+`useMockData: true` for a standalone demo. Set it to `false` and replace
+`baseUrl` with a secure, reachable Jetson/API URL for live camera and sensor
+updates. A phone cannot reach a private Jetson address such as
+`192.168.1.100` unless it is on the same network or connected through a secure
+VPN/tunnel.
 
 ## License and data
 

@@ -228,6 +228,45 @@ inventory or freshness data changes. Example notification payload:
 Remote notifications require `useMockData: false`, a reachable HTTPS API, and
 an Android/iOS development or production build with notification permissions.
 
+## Notification backend
+
+The `notification-service/` directory contains a small Node.js service that
+stores Expo device tokens and sends alerts through Expo Push Service. It can run
+on the Jetson, a secure server, or a Render web service.
+
+Start it locally:
+
+```bash
+cd notification-service
+npm install
+set NOTIFICATION_API_KEY=replace-with-a-long-random-value
+npm start
+```
+
+On macOS/Linux, use `export` instead of `set`. Copy `.env.example` as a
+reference, but never commit real API keys or token-store files.
+
+The service exposes:
+
+- `GET /health` - health check
+- `POST /notifications/register` - registers a phone's Expo token
+- `POST /notifications/evaluate` - evaluates inventory and sends alerts
+
+Protect evaluation requests with the `x-api-key` header. For example:
+
+```bash
+curl -X POST http://localhost:8001/notifications/evaluate \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: replace-with-a-long-random-value" \
+  -d "{\"inventory\":[{\"name\":\"Strawberries\",\"state\":\"expiring\",\"location\":\"Upper shelf\"},{\"name\":\"Greek yogurt\",\"state\":\"low\",\"quantity\":\"1 tub\"}]}"
+```
+
+The service stores tokens in a local JSON file by default. For production,
+replace that store with durable private storage and put the service behind
+HTTPS, authentication, rate limiting, and monitoring. The Jetson's sensor and
+inventory pipeline should call `/notifications/evaluate` whenever a new
+snapshot changes an item's `low` or `expiring` state.
+
 ## License and data
 
 No license or third-party dataset is currently declared in this repository.

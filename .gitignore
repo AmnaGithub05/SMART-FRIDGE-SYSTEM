@@ -3,3 +3,5 @@ frontend/dist/
 mobile/node_modules/
 mobile/dist/
 mobile/.expo/
+notification-service/node_modules/
+notification-service/data/

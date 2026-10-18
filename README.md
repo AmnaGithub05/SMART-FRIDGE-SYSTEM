@@ -32,6 +32,7 @@ deployment on an NVIDIA Jetson Orin Nano, with ONNX export for edge inference.
 | `dataset/` | YOLO images, labels, and generated `dataset.yaml` configuration |
 | `models/` | Training outputs, weights, and exported models |
 | `database/` | SQLite inventory database |
+| `frontend/` | React/Vite dashboard for freshness decisions, inventory, alerts, and history |
 
 Most directories are created by the script at runtime and are intentionally not
 required to be committed to source control.
@@ -115,11 +116,56 @@ needs:
   notification data
 - Monitoring, retraining, and food-safety validation
 
-## Related dashboard
+## React dashboard
 
-The companion React dashboard is maintained separately. It can run in mock mode
-before the Jetson API is available and is intended to consume the edge-service
-data described above.
+The repository includes the AmSung Fridge dashboard in `frontend/`. It presents
+the vision result, VOC reading, combined freshness decision, confidence scores,
+inventory, restock alerts, and an eight-reading freshness history chart.
+
+Run it locally:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Create and preview a production build:
+
+```bash
+cd frontend
+npm run build
+npm run preview
+```
+
+The dashboard uses mock data by default so it can be viewed without a Jetson
+backend. Configure the API in [`frontend/src/config.js`](frontend/src/config.js):
+
+```js
+export const API_CONFIG = {
+  baseUrl: 'http://192.168.1.100:8000',
+  useMockData: true,
+  refreshIntervalMs: 8000,
+};
+```
+
+Set `useMockData` to `false` when the edge service is available. The frontend
+expects these endpoints:
+
+- `GET /status` - overall freshness result and final decision
+- `GET /vision` - detected item and visual confidence
+- `GET /sensor` - VOC value and trend
+- `GET /history` - historical readings
+- `GET /inventory` - tracked food and quantities
+- `GET /notifications` - restock and freshness alerts
+
+The API boundary is [`frontend/src/services/fridgeApi.js`](frontend/src/services/fridgeApi.js),
+so response mapping can be adjusted without changing dashboard components.
+
+For static hosting, deploy the generated `frontend/dist/` directory after
+running `npm run build`. For a service such as Render, use `frontend` as the
+root directory, `npm install && npm run build` as the build command, and
+`frontend/dist` as the publish directory when configuring a static site.
 
 ## License and data
 
